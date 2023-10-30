@@ -7,24 +7,63 @@ namespace Web
 {
 	class Program
 	{
+		const int vx = 1000;
+		const int vy = 800;
+
+		const int Margin = 100;
+		
 		const int FrameTime = 7;
-		const int ChangeDirectionTime = 200;
-		public const int NumberOfLinks = 2;
+		const int ChangeDirectionTime = 20;
+		public const int LinksMultiplier = 1;
 
-		static Vector2 pos = new Vector2(400, 200);
-		static Vector2 vel = new Vector2(1, 1);
+		const int NumberOfNodes = 1000;
+		const int NodeRadius = 5;
+		static Color NodeColor = Color.PURPLE;
+		static Color LineColor = Color.WHITE;
 
-		static Random ran = new();
+
+		public static  Node[] NodeArr = new Node[NumberOfNodes];
+
+		static Random rand = new();
 		
 		public static void Main()
 		{
 			Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE);
-			Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
+			// Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
 			
-			Raylib.InitWindow(800, 480, "Hello World");
+			Raylib.InitWindow(vx, vy, "Hello World");
 			// Raylib.SetWindowIcon(Raylib.LoadImage("icon.png"));
 			
 			Raylib.SetTargetFPS(144);
+			
+			
+			for (int i = 0; i < NodeArr.Length; i++)
+			{
+				NodeArr[i] = new Node( new Vector2(rand.Next(Margin, vx - Margin), rand.Next(Margin, vy - Margin)));
+			}
+			
+			foreach (Node node in NodeArr)
+			{
+				for (int i = 0; i < LinksMultiplier; i++)
+				{
+					while (true)
+					{
+						Node target = NodeArr[rand.Next(0, NodeArr.Length)];
+						if (!node.Targets.Contains(target) && target != node && !target.Targets.Contains(node))
+						{
+							node.Targets.Add(target);
+							break;
+						}
+					}
+				}
+
+				double x = rand.NextDouble();
+				double y = rand.NextDouble();
+				x = rand.Next(0, 11) <= 5 ? -x : x;
+				y = rand.Next(0, 11) <= 5 ? -y : y;
+
+				node.MovementDirection = new Vector2((float)x, (float)y);
+			}			
 
 			Timers.Timer frameTimer = new(FrameTime);
 			frameTimer.Elapsed += CalculateNextFrame;
@@ -33,14 +72,17 @@ namespace Web
 			Timers.Timer ChangeDirectionTimer = new(ChangeDirectionTime);
 			ChangeDirectionTimer.Elapsed += ChangeDirection;
 			ChangeDirectionTimer.Start();
+			
 
 			while (!Raylib.WindowShouldClose())
 			{
 				Raylib.BeginDrawing();
-				Raylib.ClearBackground(Color.WHITE);
-				
-				Raylib.DrawText("Hello, world!", (int)pos.X, (int)pos.Y, 20, Color.BLACK);
-				
+				Raylib.ClearBackground(Color.BLACK);
+
+				DrawLines();
+				DrawNodes();
+				Raylib.DrawFPS(20, 20);
+
 				Raylib.EndDrawing();
 			}
 
@@ -50,16 +92,52 @@ namespace Web
 
 		private static void CalculateNextFrame(object? sender, ElapsedEventArgs e)
 		{
-			pos = new Vector2(pos.X + vel.X, pos.Y + vel.Y);
+			foreach (Node node in NodeArr)
+			{
+				node.Position = new Vector2(node.Position.X + node.MovementDirection.X, node.Position.Y + node.MovementDirection.Y);
+				if (node.Position.X >= vx - Margin || node.Position.X <= Margin)
+				{
+					node.MovementDirection = new Vector2(-node.MovementDirection.X, node.MovementDirection.Y);
+				}
+				if (node.Position.Y >= vy - Margin || node.Position.Y <= Margin)
+				{
+					node.MovementDirection = new Vector2(node.MovementDirection.X, -node.MovementDirection.Y);
+				}
+			}
 		}
 
 		private static void ChangeDirection(object? sender, ElapsedEventArgs e)
 		{
-			double x = ran.NextDouble();
-			x = ran.Next(0, 11) <= 5 ? -x : x;
-			double y = x == 0 ? 1 : ran.NextDouble();
-			y = ran.Next(0, 11) <= 5 ? -y : y;
-			vel = new Vector2((float)x, (float)y);
+			foreach (Node node in NodeArr)
+			{
+				double x = rand.NextDouble();
+				double y = rand.NextDouble();
+				x = rand.Next(1, 11) <= 5 ? -x : x;
+				y = rand.Next(1, 11) <= 5 ? -y : y;
+
+				node.MovementDirection = new Vector2((float)x, (float)y);
+			}	
+		}
+		
+		private static void DrawLines()
+		{
+			for (int i = 0; i < NodeArr.Length; i++)
+			{
+				Node currentNode = NodeArr[i];
+				for (int j = 0; j < currentNode.Targets.Count; j++)
+				{
+					Raylib.DrawLine((int)currentNode.Position.X, (int)currentNode.Position.Y, (int)currentNode.Targets[j].Position.X, (int)currentNode.Targets[j].Position.Y, LineColor);
+				}
+			}
+		}
+		
+		private static void DrawNodes()
+		{
+			foreach (Node node in NodeArr)
+			{
+				Raylib.DrawCircle((int)node.Position.X, (int)node.Position.Y, NodeRadius, Color.BLACK);
+				Raylib.DrawCircleLines((int)node.Position.X, (int)node.Position.Y, NodeRadius, NodeColor);
+			}
 		}
 	}
 }
