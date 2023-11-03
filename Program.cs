@@ -13,13 +13,14 @@ namespace Web
 		const int Margin = 100;
 		
 		const int FrameTime = 7;
-		const int ChangeDirectionTime = 20;
-		public const int LinksMultiplier = 1;
+		const int ChangeDirectionTime = 500;
 
-		const int NumberOfNodes = 1000;
-		const int NodeRadius = 5;
-		static Color NodeColor = Color.PURPLE;
+		const int NumberOfNodes = 20; // ! min 3 nodes
+		const int NodeRadius = 15;
+		static Color NodeColor = Color.GREEN;
+		static Color NodeInnerColor = Color.WHITE;
 		static Color LineColor = Color.WHITE;
+		static Color TextColor = Color.BLACK;
 
 
 		public static  Node[] NodeArr = new Node[NumberOfNodes];
@@ -28,10 +29,10 @@ namespace Web
 		
 		public static void Main()
 		{
-			Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE);
-			// Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
+			// Raylib.SetConfigFlags(ConfigFlags.FLAG_WINDOW_RESIZABLE);
+			Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
 			
-			Raylib.InitWindow(vx, vy, "Hello World");
+			Raylib.InitWindow(vx, vy, "Web Animation");
 			// Raylib.SetWindowIcon(Raylib.LoadImage("icon.png"));
 			
 			Raylib.SetTargetFPS(144);
@@ -44,16 +45,18 @@ namespace Web
 			
 			foreach (Node node in NodeArr)
 			{
-				for (int i = 0; i < LinksMultiplier; i++)
+				while(true)
 				{
-					while (true)
+					Node target = NodeArr[rand.Next(0, NodeArr.Length)];
+					// ! Ensures no duplicate connections
+					if(!target.Targets.Contains(node) && !node.Targets.Contains(target) && target != node)
 					{
-						Node target = NodeArr[rand.Next(0, NodeArr.Length)];
-						if (!node.Targets.Contains(target) && target != node && !target.Targets.Contains(node))
-						{
-							node.Targets.Add(target);
-							break;
-						}
+						target.Targets.Add(node);
+                        node.Targets.Add(target);
+						break;
+					}
+					else if(NodeArr.Length < 3){
+						break;
 					}
 				}
 
@@ -135,8 +138,10 @@ namespace Web
 		{
 			foreach (Node node in NodeArr)
 			{
-				Raylib.DrawCircle((int)node.Position.X, (int)node.Position.Y, NodeRadius, Color.BLACK);
+				Raylib.DrawCircle((int)node.Position.X, (int)node.Position.Y, NodeRadius, NodeInnerColor);
 				Raylib.DrawCircleLines((int)node.Position.X, (int)node.Position.Y, NodeRadius, NodeColor);
+
+				Raylib.DrawText(node.Targets.Count + "", (int)node.Position.X, (int)node.Position.Y, 8, TextColor);
 			}
 		}
 	}
